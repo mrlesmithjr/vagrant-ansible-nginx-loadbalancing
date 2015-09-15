@@ -257,8 +257,9 @@ vagrant up
 
 To run ansible from within Vagrant nodes (Ex. site.yml)
 ````
-vagrant ssh lb-1 # or lb-2; both work
+vagrant ssh lb-1 # or lb-2, mysql-1 or mysql-2; any will work
 cd /vagrant
+./update_hosts.sh
 ansible-playbook -i hosts playbook.yml
 ````
 
