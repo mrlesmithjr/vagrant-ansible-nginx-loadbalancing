@@ -1,0 +1,138 @@
+---
+- hosts: all
+  remote_user: vagrant
+  sudo: true
+  vars:
+    - config_hosts: true
+  tasks:
+    - name: updating /etc/hosts in case of dns lookup issues
+      lineinfile: dest=/etc/hosts regexp='.*{{ item }}$' line="{{ hostvars[item].ansible_eth1.ipv4.address }} {{ item }}" state=present
+      with_items: groups['all']
+      when: config_hosts is defined and config_hosts
+
+- hosts: load-balancers
+  remote_user: vagrant
+  sudo: true
+  handlers:
+    - name: restart nginx
+      service: name=nginx state=restarted
+  vars:
+    - load_balancer_configs:
+        - name: mysql
+          load_balancing_method: least_conn ##least_conn, least_time or hash
+          protocol: tcp
+          backend_port: 3306
+          frontend_port: 3306
+          backend_servers:
+           - mysql-1
+           - mysql-2
+#        - name: elasticsearch
+#          load_balancing_method: least_conn ##least_conn, least_time or hash
+#          protocol: tcp
+#          backend_port: 9200
+#          frontend_port: 9200
+#          backend_servers:
+#            - es-1
+#            - es-2
+    - nginx_branch: development
+  roles:
+    - mrlesmithjr.nginx
+  tasks:
+    - name: adding nginx repo
+      apt_repository: repo='ppa:nginx/{{ nginx_branch }}' state=present
+
+    - name: upgrading nginx
+      apt: name=nginx state=latest
+
+    - name: configuring nginx for tcp load balancing
+      template: src=templates/etc/nginx/nginx.conf.j2 dest=/etc/nginx/nginx.conf
+      notify: restart nginx
+
+    - name: ensuring nginx stream.d folder exists
+      file: path=/etc/nginx/stream.d state=directory
+
+    - name: configuring nginx load balancer configs
+      template: src=templates/etc/nginx/stream.d/streams.conf.j2 dest=/etc/nginx/stream.d/{{ item.name }}.conf
+      notify: restart nginx
+      with_items: load_balancer_configs
+      when: load_balancer_configs is defined
+
+    - name: installing mysql client
+      apt: name={{ item }} state=present
+      with_items:
+        - mysql-client
+
+- hosts: mysql-nodes
+  remote_user: vagrant
+  sudo: true
+  vars:
+    - mysql_accounts:
+        - name: "{{ mysql_replication_user }}"
+          pass: "{{ mysql_replication_pass }}"
+        - name: "{{ mysql_test_user }}"
+          pass: "{{ mysql_test_pass }}"
+    - mysql_master: mysql-1
+    - mysql_replication_dbs:
+        - test
+        - test1
+        - test2
+    - mysql_replication_user: replicator
+    - mysql_replication_pass: replication
+    - mysql_server_replication: true
+    - mysql_slave: mysql-2
+    - mysql_test_user: lbtest
+    - mysql_test_pass: lbtest
+  handlers:
+    - name: restart mysql
+      service: name=mysql state=restarted
+  roles:
+    - mrlesmithjr.mysql
+  tasks:
+    - name: checking if cluster is configured
+      stat: path=/etc/mysql/clustered
+      register: clustered
+
+    - name: creating mysql users
+      mysql_user: name={{ item.name }} password={{ item.pass }} priv=*.*:ALL state=present host=%
+      with_items: mysql_accounts
+
+    - name: configuring mysql
+      template: src=templates/etc/mysql/my.cnf.j2 dest=/etc/mysql/my.cnf owner=root group=root mode=0644
+      register: mysql_configured
+
+    - name: restarting mysql
+      service: name=mysql state=restarted
+      when: mysql_configured.changed
+
+    - name: finding master log position
+      mysql_replication: mode=getmaster
+      register: master
+      delegate_to: "{{ mysql_master }}"
+      when: not clustered.stat.exists
+
+    - name: finding slave log position
+      mysql_replication: mode=getmaster
+      register: slave
+      delegate_to: "{{ mysql_slave }}"
+      when: not clustered.stat.exists
+
+    - name: stopping slave on slave
+      mysql_replication: mode=stopslave
+      when: not clustered.stat.exists
+
+    - name: configuring replication on slave
+      mysql_replication: mode=changemaster master_host={{ mysql_master }} master_log_file={{ master.File }} master_log_pos={{ master.Position }} master_user={{ mysql_replication_user }} master_password={{ mysql_replication_pass }}
+      when: mysql_master is defined and inventory_hostname == "{{ mysql_slave }}" and not clustered.results.exists
+
+    - name: configuring replication on master
+      mysql_replication: mode=changemaster master_host={{ mysql_slave }} master_log_file={{ slave.File }} master_log_pos={{ slave.Position }} master_user={{ mysql_replication_user }} master_password={{ mysql_replication_pass }}
+      when: mysql_slave is defined and inventory_hostname == "{{ mysql_master }}" and not clustered.results.exists
+
+    - name: creating mysql dbs
+      mysql_db: name={{ item }} state=present
+      with_items: mysql_replication_dbs
+      when: mysql_master is defined and inventory_hostname == "{{ mysql_master }}"
+
+    - name: marking cluster as configured
+      file: path=/etc/mysql/clustered state=touch
+      when: not clustered.stat.exists

@@ -1,0 +1,12 @@
+upstream {{ item.name }} {
+{%  if item.load_balancing_method is defined %}
+      {{ item.load_balancing_method }};
+{%  endif %}
+{%  for server in item.backend_servers %}
+      server {{ server }}:{{ item.backend_port }};
+{%  endfor %}
+}
+server {
+      listen {{ item.frontend_port }};
+      proxy_pass {{ item.name }};
+}
