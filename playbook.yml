@@ -122,11 +122,11 @@
 
     - name: configuring replication on slave
       mysql_replication: mode=changemaster master_host={{ mysql_master }} master_log_file={{ master.File }} master_log_pos={{ master.Position }} master_user={{ mysql_replication_user }} master_password={{ mysql_replication_pass }}
-      when: mysql_master is defined and inventory_hostname == "{{ mysql_slave }}" and not clustered.results.exists
+      when: mysql_master is defined and inventory_hostname == "{{ mysql_slave }}" and not clustered.stat.exists
 
     - name: configuring replication on master
       mysql_replication: mode=changemaster master_host={{ mysql_slave }} master_log_file={{ slave.File }} master_log_pos={{ slave.Position }} master_user={{ mysql_replication_user }} master_password={{ mysql_replication_pass }}
-      when: mysql_slave is defined and inventory_hostname == "{{ mysql_master }}" and not clustered.results.exists
+      when: mysql_slave is defined and inventory_hostname == "{{ mysql_master }}" and not clustered.stat.exists
 
     - name: creating mysql dbs
       mysql_db: name={{ item }} state=present
