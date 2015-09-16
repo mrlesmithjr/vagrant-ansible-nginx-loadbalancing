@@ -80,6 +80,10 @@ define( 'AUTOMATIC_UPDATER_DISABLED', {{ wordpress_auto_up_disable }} );
 /** Define AUTOMATIC Updates for Components. */
 define( 'WP_AUTO_UPDATE_CORE', {{ wordpress_core_update_level }} );
 
+/** Defines site_url and home_url to solve injecting the incorrect URL from configuring from VIP...Temporary fix
+define('WP_HOME','http://{{ keepalived_vip }}');
+define('WP_SITEURL','http://{{ keepalived_vip }}');
+
 /* That's all, stop editing! Happy blogging. */
 
 /** Absolute path to the WordPress directory. */
