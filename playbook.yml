@@ -93,17 +93,22 @@
           pass: "{{ mysql_replication_pass }}"
         - name: "{{ mysql_test_user }}"
           pass: "{{ mysql_test_pass }}"
+        - name: "{{ wordpress_user }}"
+          pass: "{{ wordpress_user_pass }}"
     - mysql_master: mysql-1
     - mysql_replication_dbs:
         - test
         - test1
         - test2
+        - wordpress
     - mysql_replication_user: replicator
     - mysql_replication_pass: replication
     - mysql_server_replication: true
     - mysql_slave: mysql-2
     - mysql_test_user: lbtest
     - mysql_test_pass: lbtest
+    - wordpress_user: wordpress
+    - wordpress_user_pass: wordpress
   handlers:
     - name: restart mysql
       service: name=mysql state=restarted
@@ -163,12 +168,38 @@
   remote_user: vagrant
   sudo: true
   vars:
+    - disable_default_nginx_site: true
     - nginx_default_root: /usr/share/nginx/html
+    - wordpress_default_root: "{{ nginx_default_root}}/wordpress"
+    - wordpress_package: http://wordpress.org/latest.tar.gz
   handlers:
     - name: restart nginx
       service: name=nginx state=restarted
   roles:
     - mrlesmithjr.nginx
   tasks:
-    - name: configuring default web page
+    - name: installing pre-req packages
+      apt: name={{ item }} state=present
+      with_items:
+        - git
+        - mcrypt
+        - php5-fpm
+        - php5-mysql
+
+    - name: configuring default web page to validate load-balancers
       template: src=templates/usr/share/nginx/html/index.html.j2 dest="{{ nginx_default_root }}/index.html"
+
+    - name: downloading wordpress package
+      get_url: url={{ wordpress_package }} dest="{{ wordpress_default_root }}.tar.gz"
+
+    - name: extracting wordpress package
+      unarchive: src="{{ wordpress_default_root }}.tar.gz" dest="{{ wordpress_default_root }}/wordpress" creates="{{ wordpress_default_root }}/config.php"
+
+    - name: disabling NGINX default web site
+      file: dest=/etc/nginx/sites-enabled/default state=absent
+      notify: restart nginx
+      when: disable_default_nginx_site is defined and disable_default_nginx_site
+
+    - name: configuring wordpress site
+      template: src=templates/etc/nginx/conf.d/default.conf.j2 dest=/etc/nginx/conf.d/default.conf
+      notify: restart nginx
