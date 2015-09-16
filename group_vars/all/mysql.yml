@@ -1,0 +1,20 @@
+---
+mysql_accounts:
+  - name: "{{ mysql_replication_user }}"
+    pass: "{{ mysql_replication_pass }}"
+  - name: "{{ mysql_test_user }}"
+    pass: "{{ mysql_test_pass }}"
+  - name: "{{ wordpress_db_user }}"
+    pass: "{{ wordpress_db_user_pass }}"
+mysql_master: mysql-1
+mysql_replication_dbs:
+  - test
+  - test1
+  - test2
+  - "{{ wordpress_db }}"
+mysql_replication_user: replicator
+mysql_replication_pass: replication
+mysql_server_replication: true
+mysql_slave: mysql-2
+mysql_test_user: lbtest
+mysql_test_pass: lbtest

@@ -1,0 +1,4 @@
+---
+config_keepalived: true
+keepalived_vip: 192.168.250.100
+keepalived_vip_int: eth1

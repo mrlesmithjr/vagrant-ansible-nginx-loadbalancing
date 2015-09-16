@@ -1,0 +1,18 @@
+---
+wordpress_admin_password: 91e71c4092c656317cdf2063fa7e1143  #default is VagrantAdmin1; generate new password here http://www.miraclesalad.com/webtools/md5.php
+wordpress_admin_user: admin
+# Disable All Updates
+  # By default automatic updates are enabled, set this value to true to disable all automatic updates
+wordpress_auto_up_disable: false
+#Define Core Update Level
+  #true  = Development, minor, and major updates are all enabled
+  #false = Development, minor, and major updates are all disabled
+  #minor = Minor updates are enabled, development, and major updates are disabled
+wordpress_core_update_level: true
+wordpress_db: wordpress
+wordpress_db_server: "{{ keepalived_vip }}"
+wordpress_db_user: wordpress
+wordpress_db_user_pass: wordpress
+wordpress_default_root: "{{ nginx_default_root }}/wordpress"
+wordpress_package: http://wordpress.org/latest.tar.gz
+wordpress_update_db_site_file: /tmp/update_db_site.sql
