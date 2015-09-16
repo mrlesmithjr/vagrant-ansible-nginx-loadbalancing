@@ -1,0 +1,14 @@
+---
+- hosts: mysql-1
+  remote_user: vagrant
+  sudo: true
+  vars:
+    - wordpress_db: wordpress
+    - wordpress_update_db_site_file: /tmp/update_db_site.sql
+  tasks:
+# The tasks below fix an issue with the wordpress site URL temporarily until a real fix has been created
+    - name: uploading update_db_site sql file
+      template: src=templates/update_db_site.sql.j2 dest={{ wordpress_update_db_site_file }}
+
+    - name: fixing DB
+      mysql_db: state=import name={{ wordpress_db }} target={{ wordpress_update_db_site_file }}

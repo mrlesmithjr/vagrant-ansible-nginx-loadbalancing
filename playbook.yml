@@ -175,6 +175,7 @@
   vars:
     - disable_default_nginx_site: true
     - keepalived_vip: 192.168.250.100
+    - mysql_master: mysql-1
     - nginx_default_root: /usr/share/nginx/html
       # Disable All Updates
         # By default automatic updates are enabled, set this value to true to disable all automatic updates

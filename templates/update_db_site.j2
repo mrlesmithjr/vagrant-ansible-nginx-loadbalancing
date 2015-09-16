@@ -1,0 +1,3 @@
+use {{ wordpress_db }};
+update wp_options set option_value = 'http://{{ keepalived_vip }}' where option_id = 1;
+update wp_options set option_value = 'http://{{ keepalived_vip }}' where option_id = 2;
