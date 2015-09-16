@@ -5,3 +5,6 @@ echo "lb-[1:2]" >> hosts
 echo "" >> hosts
 echo "[mysql-nodes]" >> hosts
 echo "mysql-[1:2]" >> hosts
+echo "" >> hosts
+echo "[web-servers]" >> hosts
+echo "web-[1:2]" >> hosts

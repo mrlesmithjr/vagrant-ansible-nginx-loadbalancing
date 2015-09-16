@@ -1,0 +1,22 @@
+upstream {{ item.name }} {
+{%  if item.load_balancing_method is defined and item.load_balancing_method != "round_robin" %}
+      {{ item.load_balancing_method }};
+{%  endif %}
+{%  for server in item.backend_servers %}
+      server {{ server }}:{{ item.backend_port }};
+{%  endfor %}
+}
+server {
+      listen {{ item.frontend_port }};
+{% if item.server_name is defined %}
+      {{ item.server_name }};
+{% endif %}
+{% if item.location is defined %}
+      location {{ item.location }} {
+          proxy_pass {{ item.name }};
+      }
+{% endif %}
+{% if item.location is not defined %}
+      proxy_pass {{ item.name }};
+{% endif %}
+}

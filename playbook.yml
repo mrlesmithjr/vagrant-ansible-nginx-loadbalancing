@@ -27,6 +27,16 @@
           backend_servers:
            - mysql-1
            - mysql-2
+        - name: nginx
+          load_balancing_method: round_robin
+          protocol: http
+          backend_port: 80
+          frontend_port: 80
+          backend_servers:
+            - web-1
+            - web-2
+          server_name: "{{ ansible_hostname }}"
+          location: /
 #        - name: elasticsearch
 #          load_balancing_method: least_conn ##least_conn, least_time or hash
 #          protocol: tcp
@@ -52,11 +62,17 @@
     - name: ensuring nginx stream.d folder exists
       file: path=/etc/nginx/stream.d state=directory
 
-    - name: configuring nginx load balancer configs
+    - name: configuring nginx load balancer (TCP) configs
       template: src=templates/etc/nginx/stream.d/streams.conf.j2 dest=/etc/nginx/stream.d/{{ item.name }}.conf
       notify: restart nginx
       with_items: load_balancer_configs
-      when: load_balancer_configs is defined
+      when: load_balancer_configs is defined and item.protocol == "tcp"
+
+    - name: configuring nginx load balancer (HTTP) configs
+      template: src=templates/etc/nginx/conf.d/http.conf.j2 dest=/etc/nginx/conf.d/{{ item.name }}.conf
+      notify: restart nginx
+      with_items: load_balancer_configs
+      when: load_balancer_configs is defined and item.protocol == "http"
 
     - name: disabling NGINX default web site
       file: dest=/etc/nginx/sites-enabled/default state=absent
@@ -142,3 +158,13 @@
     - name: marking cluster as configured
       file: path=/etc/mysql/clustered state=touch
       when: not clustered.stat.exists
+
+- hosts: web-servers
+  remote_user: vagrant
+  sudo: true
+  vars:
+  handlers:
+    - name: restart nginx
+      service: name=nginx state=restarted
+  roles:
+    - mrlesmithjr.nginx

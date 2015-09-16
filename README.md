@@ -1,7 +1,7 @@
 Purpose
 =======
 
-Spin up nodes (load balancers and mysql nodes) for testing with NGINX TCP Load-Balancing...Creates MySQL active-active Replication to keep DB's in sync.
+Spin up nodes (load balancers, db nodes and web nodes) for testing with NGINX TCP Load-Balancing...Creates MySQL active-active Replication to keep DB's in sync.
 
 Requirements
 ============
