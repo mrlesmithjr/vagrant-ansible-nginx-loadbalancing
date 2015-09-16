@@ -232,4 +232,4 @@
       template: src=templates/usr/share/nginx/html/wordpress/wp-config.php.j2 dest="{{ wordpress_default_root }}/wp-config.php" owner=www-data group=www-data
 
     - name: changing ownership of wordpress root folder
-      file: dest={{ wordpress_default_root }} state=directory owner=www-data group=www-data
+      file: dest={{ wordpress_default_root }} state=directory owner=www-data group=www-data recurse=yes
