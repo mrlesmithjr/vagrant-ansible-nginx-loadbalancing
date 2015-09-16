@@ -13,10 +13,10 @@ server {
 {% endif %}
 {% if item.location is defined %}
       location {{ item.location }} {
-          proxy_pass {{ item.name }};
+          proxy_pass http://{{ item.name }};
       }
 {% endif %}
 {% if item.location is not defined %}
-      proxy_pass {{ item.name }};
+      proxy_pass http://{{ item.name }};
 {% endif %}
 }
