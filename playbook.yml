@@ -171,4 +171,4 @@
     - mrlesmithjr.nginx
   tasks:
     - name: configuring default web page
-      template: src=templates/usr/share/nginx/html/default.html.j2 dest="{{ nginx_default_root }}/default.html"
+      template: src=templates/usr/share/nginx/html/index.html.j2 dest="{{ nginx_default_root }}/index.html"
