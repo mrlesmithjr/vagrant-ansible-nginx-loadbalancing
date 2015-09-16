@@ -187,7 +187,7 @@
         #minor = Minor updates are enabled, development, and major updates are disabled
     - wordpress_core_update_level: true
     - wordpress_db_server: "{{ keepalived_vip }}"
-    - wordpress_default_root: "{{ nginx_default_root}}/wordpress"
+    - wordpress_default_root: "{{ nginx_default_root }}/wordpress"
     - wordpress_package: http://wordpress.org/latest.tar.gz
     - wordpress_db: wordpress
     - wordpress_db_user: wordpress
@@ -211,10 +211,10 @@
       template: src=templates/usr/share/nginx/html/index.html.j2 dest="{{ nginx_default_root }}/index.html"
 
     - name: downloading wordpress package
-      get_url: url={{ wordpress_package }} dest="{{ wordpress_default_root }}.tar.gz"
+      get_url: url={{ wordpress_package }} dest="{{ nginx_default_root }}/wordpress.tar.gz"
 
     - name: extracting wordpress package
-      unarchive: src="{{ wordpress_default_root }}.tar.gz" dest="{{ nginx_default_root }}/" creates="{{ wordpress_default_root }}/index.php"
+      unarchive: src="{{ nginx_default_root }}/wordpress.tar.gz" dest="{{ nginx_default_root }}/" creates="{{ wordpress_default_root }}/index.php"
 
     - name: disabling NGINX default web site
       file: dest=/etc/nginx/sites-enabled/default state=absent
