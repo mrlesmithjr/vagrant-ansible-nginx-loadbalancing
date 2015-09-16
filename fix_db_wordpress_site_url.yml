@@ -6,7 +6,7 @@
     - reset_admin_password: false
     - keepalived_vip: 192.168.250.100
     - wordpress_db: wordpress
-    - wordpress_admin_password: $P$B3gD8U9JnM20wPg5n242eJhhuBVhvr0  #default is admin; generate new password here http://www.miraclesalad.com/webtools/md5.php
+    - wordpress_admin_password: 91e71c4092c656317cdf2063fa7e1143  #default is VagrantAdmin1; generate new password here http://www.miraclesalad.com/webtools/md5.php
     - wordpress_admin_user: admin
     - wordpress_update_db_site_file: /tmp/update_db_site.sql
   tasks:
