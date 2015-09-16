@@ -3,6 +3,7 @@
   remote_user: vagrant
   sudo: true
   vars:
+    - keepalived_vip: 192.168.250.100
     - wordpress_db: wordpress
     - wordpress_update_db_site_file: /tmp/update_db_site.sql
   tasks:
