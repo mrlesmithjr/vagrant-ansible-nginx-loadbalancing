@@ -3,8 +3,11 @@
   remote_user: vagrant
   sudo: true
   vars:
+    - reset_admin_password: false
     - keepalived_vip: 192.168.250.100
     - wordpress_db: wordpress
+    - wordpress_admin_password: $1$1YxjrqMf$j.7IfeD5eYqp5DOHC6Rku0  #default is admin; generate with the following...openssl passwd -1 'admin'
+    - wordpress_admin_user: admin
     - wordpress_update_db_site_file: /tmp/update_db_site.sql
   tasks:
 # The tasks below fix an issue with the wordpress site URL temporarily until a real fix has been created
