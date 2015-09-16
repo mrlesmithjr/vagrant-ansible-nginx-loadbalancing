@@ -10,6 +10,12 @@
       with_items: groups['all']
       when: config_hosts is defined and config_hosts
 
+    - name: installing common packages
+      apt: name={{ item }} state=present
+      with_items:
+        - git
+        - mysql-client
+
 - hosts: load-balancers
   remote_user: vagrant
   sudo: true
@@ -82,11 +88,6 @@
       file: dest=/etc/nginx/sites-enabled/default state=absent
       notify: restart nginx
       when: disable_default_nginx_site is defined and disable_default_nginx_site
-
-    - name: installing mysql client
-      apt: name={{ item }} state=present
-      with_items:
-        - mysql-client
 
 - hosts: mysql-nodes
   remote_user: vagrant
@@ -200,7 +201,6 @@
     - name: installing pre-req packages
       apt: name={{ item }} state=present
       with_items:
-        - git
         - mcrypt
         - php5
         - php5-cgi

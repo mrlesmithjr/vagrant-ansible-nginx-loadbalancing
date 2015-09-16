@@ -5,6 +5,7 @@ Spin up Vagrant nodes (load balancers (including VIP provided by KeepAliveD), db
 
 ###### To connect to the wordpress install simply open your browser of choice and point to http://192.168.250.100
 
+
 Requirements
 ============
 
@@ -556,6 +557,14 @@ To install ansible-galaxy roles within your HostOS
 ````
 ansible-galaxy install mrlesmithjr.bootstrap
 ansible-galaxy install mrlesmithjr.base
+````
+
+Now you should be able to open your browser and head over to http://192.168.250.100
+If for some reason your site is redirecting to http://nginx you can run the following playbook to update the DB..(Temporary fix for now)
+````
+vagrant ssh lb-1 #lb-1, lb-2, mysql-1, mysql-2, web-1 or web-2; all work
+cd /vagrant
+ansible-playbook -i hosts fix_db_wordpress_site_url.yml
 ````
 
 License
