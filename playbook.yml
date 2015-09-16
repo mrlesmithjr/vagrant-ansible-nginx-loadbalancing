@@ -174,6 +174,7 @@
   sudo: true
   vars:
     - disable_default_nginx_site: true
+    - keepalived_vip: 192.168.250.100
     - nginx_default_root: /usr/share/nginx/html
       # Disable All Updates
         # By default automatic updates are enabled, set this value to true to disable all automatic updates
@@ -183,7 +184,7 @@
         #false = Development, minor, and major updates are all disabled
         #minor = Minor updates are enabled, development, and major updates are disabled
     - wordpress_core_update_level: true
-    - wordpress_db_server: 192.168.250.100
+    - wordpress_db_server: "{{ keepalived_vip }}"
     - wordpress_default_root: "{{ nginx_default_root}}/wordpress"
     - wordpress_package: http://wordpress.org/latest.tar.gz
     - wordpress_db: wordpress
