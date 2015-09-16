@@ -6,6 +6,7 @@
     - galaxy_roles:
       - mrlesmithjr.bootstrap
       - mrlesmithjr.base
+      - mrlesmithjr.keepalived
       - mrlesmithjr.mysql
       - mrlesmithjr.nginx
     - install_galaxy_roles: true

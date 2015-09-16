@@ -17,7 +17,10 @@
     - name: restart nginx
       service: name=nginx state=restarted
   vars:
+    - config_keepalived: true
     - disable_default_nginx_site: true
+    - keepalived_vip: 192.168.250.100
+    - keepalived_vip_int: eth1
     - load_balancer_configs:
         - name: mysql
           load_balancing_method: least_conn ##least_conn, least_time or hash
@@ -47,6 +50,7 @@
 #            - es-2
     - nginx_branch: development
   roles:
+    - mrlesmithjr.keepalived
     - mrlesmithjr.nginx
   tasks:
     - name: adding nginx repo
@@ -93,22 +97,23 @@
           pass: "{{ mysql_replication_pass }}"
         - name: "{{ mysql_test_user }}"
           pass: "{{ mysql_test_pass }}"
-        - name: "{{ wordpress_user }}"
-          pass: "{{ wordpress_user_pass }}"
+        - name: "{{ wordpress_db_user }}"
+          pass: "{{ wordpress_db_user_pass }}"
     - mysql_master: mysql-1
     - mysql_replication_dbs:
         - test
         - test1
         - test2
-        - wordpress
+        - "{{ wordpress_db }}"
     - mysql_replication_user: replicator
     - mysql_replication_pass: replication
     - mysql_server_replication: true
     - mysql_slave: mysql-2
     - mysql_test_user: lbtest
     - mysql_test_pass: lbtest
-    - wordpress_user: wordpress
-    - wordpress_user_pass: wordpress
+    - wordpress_db: wordpress
+    - wordpress_db_user: wordpress
+    - wordpress_db_user_pass: wordpress
   handlers:
     - name: restart mysql
       service: name=mysql state=restarted
@@ -170,8 +175,20 @@
   vars:
     - disable_default_nginx_site: true
     - nginx_default_root: /usr/share/nginx/html
+      # Disable All Updates
+        # By default automatic updates are enabled, set this value to true to disable all automatic updates
+    - wordpress_auto_up_disable: false
+      #Define Core Update Level
+        #true  = Development, minor, and major updates are all enabled
+        #false = Development, minor, and major updates are all disabled
+        #minor = Minor updates are enabled, development, and major updates are disabled
+    - wordpress_core_update_level: true
+    - wordpress_db_server: 192.168.250.100
     - wordpress_default_root: "{{ nginx_default_root}}/wordpress"
     - wordpress_package: http://wordpress.org/latest.tar.gz
+    - wordpress_db: wordpress
+    - wordpress_db_user: wordpress
+    - wordpress_db_user_pass: wordpress
   handlers:
     - name: restart nginx
       service: name=nginx state=restarted
@@ -201,6 +218,11 @@
       file: dest=/etc/nginx/sites-enabled/default state=absent
       notify: restart nginx
       when: disable_default_nginx_site is defined and disable_default_nginx_site
+
+    - name: Fetch random salts for WordPress config
+      local_action: command curl https://api.wordpress.org/secret-key/1.1/salt/
+      register: wp_salt
+      sudo: no
 
     - name: configuring wordpress site
       template: src=templates/etc/nginx/conf.d/default.conf.j2 dest=/etc/nginx/conf.d/default.conf
