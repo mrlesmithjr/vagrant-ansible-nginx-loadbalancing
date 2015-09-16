@@ -2,5 +2,5 @@ use {{ wordpress_db }};
 update wp_options set option_value = 'http://{{ keepalived_vip }}' where option_id = 1;
 update wp_options set option_value = 'http://{{ keepalived_vip }}' where option_id = 2;
 {% if reset_admin_password is defined and reset_admin_password %}
-update wp_users set option_value = '{{ wordpress_admin_password }}' where option_user_login = '{{ wordpress_admin_user }}';
+update wp_users set user_pass = '{{ wordpress_admin_password }}' where user_login = '{{ wordpress_admin_user }}';
 {% endif %}
