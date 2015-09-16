@@ -17,7 +17,7 @@
     - name: restart nginx
       service: name=nginx state=restarted
   vars:
-    - disble_default_nginx_site: true
+    - disable_default_nginx_site: true
     - load_balancer_configs:
         - name: mysql
           load_balancing_method: least_conn ##least_conn, least_time or hash
