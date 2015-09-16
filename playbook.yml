@@ -17,6 +17,7 @@
     - name: restart nginx
       service: name=nginx state=restarted
   vars:
+    - disble_default_nginx_site: true
     - load_balancer_configs:
         - name: mysql
           load_balancing_method: least_conn ##least_conn, least_time or hash
@@ -56,6 +57,11 @@
       notify: restart nginx
       with_items: load_balancer_configs
       when: load_balancer_configs is defined
+
+    - name: disabling NGINX default web site
+      file: dest=/etc/nginx/sites-enabled/default state=absent
+      notify: restart nginx
+      when: disable_default_nginx_site is defined and disable_default_nginx_site
 
     - name: installing mysql client
       apt: name={{ item }} state=present
