@@ -183,6 +183,8 @@
       with_items:
         - git
         - mcrypt
+        - php5
+        - php5-cgi
         - php5-fpm
         - php5-mysql
 
