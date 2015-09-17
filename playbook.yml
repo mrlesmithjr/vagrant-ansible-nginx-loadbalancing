@@ -244,12 +244,12 @@
       when: not clustered.stat.exists
 
     - name: copying pre-loaded wordpress sql file
-      copy: src=wordpress.sql dest=/tmp/wordpress.sql
+      copy: src=files/wordpress.sql dest=/tmp/wordpress.sql
       when: dbs_created.changed and (wordpress_preload_db is defined and wordpress_preload_db)
 
     - name: pre-loading wordpress db
       mysql_db: state=import name={{ wordpress_db }} target=/tmp/wordpress.sql
-      when: dbs_created.changed and (wordpress_preload_db is defined and wordpress_preload_db)
+      when: dbs_created.changed and (wordpress_preload_db is defined and wordpress_preload_db) and (mysql_master is defined and inventory_hostname == "{{ mysql_master }}")
 
 - hosts: web-servers
   remote_user: vagrant
