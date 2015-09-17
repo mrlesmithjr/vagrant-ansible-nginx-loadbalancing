@@ -274,13 +274,22 @@
       file: path=/etc/mysql/clustered state=touch
       when: not clustered.stat.exists
 
+    - name: checking if wordpress site has been pre-loaded
+      stat: path=/var/log/wordpress_site_pre_loaded
+      register: wordpress_site_pre_loaded
+      when: wordpress_preload_db is defined and wordpress_preload_db
+
     - name: copying pre-loaded wordpress sql file
       copy: src=files/wordpress.sql dest=/tmp/wordpress.sql
-      when: dbs_created.changed and (wordpress_preload_db is defined and wordpress_preload_db)
+      when: not wordpress_site_pre_loaded.stat.exists and (wordpress_preload_db is defined and wordpress_preload_db)
 
     - name: pre-loading wordpress db
       mysql_db: state=import name={{ wordpress_db }} target=/tmp/wordpress.sql
-      when: dbs_created.changed and (wordpress_preload_db is defined and wordpress_preload_db) and (mysql_master is defined and inventory_hostname == "{{ mysql_master }}")
+      when: not wordpress_site_pre_loaded.stat.exists and (wordpress_preload_db is defined and wordpress_preload_db) and (mysql_master is defined and inventory_hostname == "{{ mysql_master }}")
+
+    - name: marking wordpress site as pre-loaded
+      file: path=/var/log/wordpress_site_pre_loaded state=touch
+      when: not wordpress_site_pre_loaded.stat.exists and (wordpress_preload_db is defined and wordpress_preload_db)
 
 - hosts: web-servers
   remote_user: vagrant
