@@ -16,5 +16,6 @@ wordpress_db_user_pass: wordpress
 wordpress_default_root: "{{ nginx_default_root }}/wordpress"
 wordpress_dst_sync_dir: /usr/share/nginx/html
 wordpress_package: http://wordpress.org/latest.tar.gz
+wordpress_preload_db: true
 wordpress_src_sync_dir: /usr/share/nginx/html/wordpress
 wordpress_update_db_site_file: /tmp/update_db_site.sql

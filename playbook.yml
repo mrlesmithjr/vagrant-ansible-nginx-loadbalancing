@@ -235,12 +235,21 @@
 
     - name: creating mysql dbs
       mysql_db: name={{ item }} state=present
+      register: dbs_created
       with_items: mysql_replication_dbs
       when: mysql_master is defined and inventory_hostname == "{{ mysql_master }}"
 
     - name: marking cluster as configured
       file: path=/etc/mysql/clustered state=touch
       when: not clustered.stat.exists
+
+    - name: copying pre-loaded wordpress sql file
+      copy: src=wordpress.sql dest=/tmp/wordpress.sql
+      when: dbs_created.changed and (wordpress_preload_db is defined and wordpress_preload_db)
+
+    - name: pre-loading wordpress db
+      mysql_db: state=import name={{ wordpress_db }} target=/tmp/wordpress.sql
+      when: dbs_created.changed and (wordpress_preload_db is defined and wordpress_preload_db)
 
 - hosts: web-servers
   remote_user: vagrant
