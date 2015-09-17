@@ -27,6 +27,7 @@ The following packages must be installed on your Host you intend on running all 
 http://everythingshouldbevirtual.com/ansible-using-ansible-on-windows-via-cygwin
 
 Changing the Vagrantfile below is not neccessary per say!
+
 From:
 ````
 #  config.vm.provision :shell, path: "bootstrap.sh"
