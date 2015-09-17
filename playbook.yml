@@ -147,8 +147,6 @@
             - "Host $host"
             - "X-Real-IP $remote_addr"
             - "X-Forwarded-For $proxy_add_x_forwarded_for"
-          health_checks:
-            - default
 #        - name: elasticsearch
 #          load_balancing_method: least_conn ##least_conn, least_time or hash
 #          protocol: tcp
