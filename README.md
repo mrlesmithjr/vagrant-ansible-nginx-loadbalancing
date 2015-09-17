@@ -1,10 +1,24 @@
 Purpose
 =======
 
-Spin up Vagrant nodes (load balancers (including VIP provided by KeepAliveD), db nodes and web nodes) for testing with NGINX TCP Load-Balancing...Creates MySQL active-active Replication to keep DB's in sync and installs a ready to configure Wordpress install.
+Spins up Vagrant nodes (load balancers (including VIP provided by KeepAliveD), db nodes and web nodes) for testing with NGINX TCP Load-Balancing...Creates MySQL active-active Replication to keep DB's in sync and installs a pre-configured Wordpress install.
 
-###### To connect to the wordpress install simply open your browser of choice and point to http://192.168.250.100
+###### To connect to the pre-configured wordpress site simply open your browser of choice and point to http://192.168.250.100
 
+````
+user: admin
+password: VagrantAdmin1
+````
+If you would NOT like the wordpress db to be pre-loaded. Change the following.
+###### group_vars/all/wordpress.yml
+From:
+````
+wordpress_preload_db: true
+````
+To:
+````
+wordpress_preload_db: false
+````
 
 Requirements
 ============
@@ -216,6 +230,7 @@ Bootstrap Playbook
       - mrlesmithjr.keepalived
       - mrlesmithjr.mysql
       - mrlesmithjr.nginx
+      - mrlesmithjr.postfix
     - install_galaxy_roles: true
     - ssh_key_path: '.vagrant/machines/{{ inventory_hostname }}/virtualbox/private_key'
     - update_host_vars: true
@@ -298,11 +313,114 @@ playbook.yml
   sudo: true
   vars:
     - config_hosts: true
+  roles:
+    - mrlesmithjr.postfix
   tasks:
     - name: updating /etc/hosts in case of dns lookup issues
       lineinfile: dest=/etc/hosts regexp='.*{{ item }}$' line="{{ hostvars[item].ansible_eth1.ipv4.address }} {{ item }}" state=present
       with_items: groups['all']
       when: config_hosts is defined and config_hosts
+
+    - name: installing common packages
+      apt: name={{ item }} state=present
+      with_items:
+        - git
+        - mysql-client
+
+    - name: ensuring ssh_pub_keys folder exists
+      file: path=ssh_pub_keys state=directory
+      delegate_to: localhost
+      sudo: false
+      tags:
+        - ssh_keys
+
+    - name: generating ssh keys
+      user: name=vagrant generate_ssh_key=yes
+      tags:
+        - ssh_keys
+
+    - name: downloading ssh keys
+      fetch: src=/home/vagrant/.ssh/id_rsa.pub dest=./ssh_pub_keys/vagrant@{{ ansible_hostname }}.pub flat=yes
+      tags:
+        - ssh_keys
+
+    - name: adding ssh authorized_keys
+      authorized_key: user=vagrant key="{{ lookup('file', 'ssh_pub_keys/vagrant' + '@' + item + '.pub') }}" state=present
+      with_items: groups['all']
+      tags:
+        - ssh_keys
+
+    - name: identifying hosts
+      local_action: ping
+      register: id_hosts
+      tags:
+        - ssh_keys
+
+    - name: cleaning up
+      file: path=/tmp/hosts state=absent
+      tags:
+        - ssh_keys
+
+    - name: cleaning up
+      file: path=/tmp/hosts state=absent
+      delegate_to: localhost
+      run_once: true
+      tags:
+        - ssh_keys
+
+    - name: creating temporary hosts file
+      file: path=/tmp/hosts state=touch mode=0777
+      delegate_to: localhost
+      run_once: true
+      tags:
+        - ssh_keys
+
+    - name: adding hosts to temporary hosts file
+      lineinfile: dest=/tmp/hosts regexp="^{{ ansible_hostname }}" line="{{ ansible_hostname }}" state=present
+      delegate_to: localhost
+      with_items: id_hosts.results
+      tags:
+        - ssh_keys
+
+    - name: adding hosts to temporary hosts file
+      lineinfile: dest=/tmp/hosts regexp="^{{ ansible_hostname }}" line="{{ ansible_hostname }}" state=present
+      delegate_to: localhost
+      with_items: id_hosts.results
+      tags:
+        - ssh_keys
+
+    - name: adding hosts to temporary hosts file
+      lineinfile: dest=/tmp/hosts regexp="^{{ ansible_default_ipv4.address }}" line="{{ ansible_default_ipv4.address }}" state=present
+      delegate_to: localhost
+      with_items: id_hosts.results
+      tags:
+        - ssh_keys
+
+    - name: keyscan
+      shell: "ssh-keyscan -H -f /tmp/hosts >> /tmp/hosts.ready"
+      delegate_to: localhost
+      run_once: true
+      tags:
+        - ssh_keys
+
+    - name: sort
+      shell: "sort -u /tmp/hosts.ready > /tmp/hosts.sorted"
+      delegate_to: localhost
+      run_once: true
+      tags:
+        - ssh_keys
+
+    - name: copying new ssh_known_hosts
+      copy: src=/tmp/hosts.sorted dest=/etc/ssh/ssh_known_hosts
+      tags:
+        - ssh_keys
+
+    - name: cleaning up
+      file: path=/tmp/hosts state=absent
+      delegate_to: localhost
+      run_once: true
+      tags:
+        - ssh_keys
 
 - hosts: load-balancers
   remote_user: vagrant
@@ -311,13 +429,10 @@ playbook.yml
     - name: restart nginx
       service: name=nginx state=restarted
   vars:
-    - config_keepalived: true
     - disable_default_nginx_site: true
-    - keepalived_vip: 192.168.250.100
-    - keepalived_vip_int: eth1
     - load_balancer_configs:
         - name: mysql
-          load_balancing_method: least_conn ##least_conn, least_time or hash
+          load_balancing_method: least_conn ##least_conn, least_time or ip_hash
           protocol: tcp
           backend_port: 3306
           frontend_port: 3306
@@ -325,7 +440,7 @@ playbook.yml
            - mysql-1
            - mysql-2
         - name: nginx
-          load_balancing_method: round_robin
+          load_balancing_method: ip_hash
           protocol: http
           backend_port: 80
           frontend_port: 80
@@ -377,37 +492,10 @@ playbook.yml
       notify: restart nginx
       when: disable_default_nginx_site is defined and disable_default_nginx_site
 
-    - name: installing mysql client
-      apt: name={{ item }} state=present
-      with_items:
-        - mysql-client
-
 - hosts: mysql-nodes
   remote_user: vagrant
   sudo: true
   vars:
-    - mysql_accounts:
-        - name: "{{ mysql_replication_user }}"
-          pass: "{{ mysql_replication_pass }}"
-        - name: "{{ mysql_test_user }}"
-          pass: "{{ mysql_test_pass }}"
-        - name: "{{ wordpress_db_user }}"
-          pass: "{{ wordpress_db_user_pass }}"
-    - mysql_master: mysql-1
-    - mysql_replication_dbs:
-        - test
-        - test1
-        - test2
-        - "{{ wordpress_db }}"
-    - mysql_replication_user: replicator
-    - mysql_replication_pass: replication
-    - mysql_server_replication: true
-    - mysql_slave: mysql-2
-    - mysql_test_user: lbtest
-    - mysql_test_pass: lbtest
-    - wordpress_db: wordpress
-    - wordpress_db_user: wordpress
-    - wordpress_db_user_pass: wordpress
   handlers:
     - name: restart mysql
       service: name=mysql state=restarted
@@ -456,6 +544,7 @@ playbook.yml
 
     - name: creating mysql dbs
       mysql_db: name={{ item }} state=present
+      register: dbs_created
       with_items: mysql_replication_dbs
       when: mysql_master is defined and inventory_hostname == "{{ mysql_master }}"
 
@@ -463,26 +552,20 @@ playbook.yml
       file: path=/etc/mysql/clustered state=touch
       when: not clustered.stat.exists
 
+    - name: copying pre-loaded wordpress sql file
+      copy: src=files/wordpress.sql dest=/tmp/wordpress.sql
+      when: dbs_created.changed and (wordpress_preload_db is defined and wordpress_preload_db)
+
+    - name: pre-loading wordpress db
+      mysql_db: state=import name={{ wordpress_db }} target=/tmp/wordpress.sql
+      when: dbs_created.changed and (wordpress_preload_db is defined and wordpress_preload_db) and (mysql_master is defined and inventory_hostname == "{{ mysql_master }}")
+
 - hosts: web-servers
   remote_user: vagrant
   sudo: true
   vars:
     - disable_default_nginx_site: true
     - nginx_default_root: /usr/share/nginx/html
-      # Disable All Updates
-        # By default automatic updates are enabled, set this value to true to disable all automatic updates
-    - wordpress_auto_up_disable: false
-      #Define Core Update Level
-        #true  = Development, minor, and major updates are all enabled
-        #false = Development, minor, and major updates are all disabled
-        #minor = Minor updates are enabled, development, and major updates are disabled
-    - wordpress_core_update_level: true
-    - wordpress_db_server: 192.168.250.100
-    - wordpress_default_root: "{{ nginx_default_root}}/wordpress"
-    - wordpress_package: http://wordpress.org/latest.tar.gz
-    - wordpress_db: wordpress
-    - wordpress_db_user: wordpress
-    - wordpress_db_user_pass: wordpress
   handlers:
     - name: restart nginx
       service: name=nginx state=restarted
@@ -492,7 +575,6 @@ playbook.yml
     - name: installing pre-req packages
       apt: name={{ item }} state=present
       with_items:
-        - git
         - mcrypt
         - php5
         - php5-cgi
@@ -503,10 +585,10 @@ playbook.yml
       template: src=templates/usr/share/nginx/html/index.html.j2 dest="{{ nginx_default_root }}/index.html"
 
     - name: downloading wordpress package
-      get_url: url={{ wordpress_package }} dest="{{ wordpress_default_root }}.tar.gz"
+      get_url: url={{ wordpress_package }} dest="{{ nginx_default_root }}/wordpress.tar.gz"
 
     - name: extracting wordpress package
-      unarchive: src="{{ wordpress_default_root }}.tar.gz" dest="{{ nginx_default_root }}/" creates="{{ wordpress_default_root }}/index.php"
+      unarchive: src="{{ nginx_default_root }}/wordpress.tar.gz" dest="{{ nginx_default_root }}/" creates="{{ wordpress_default_root }}/index.php" copy=no
 
     - name: disabling NGINX default web site
       file: dest=/etc/nginx/sites-enabled/default state=absent
@@ -527,6 +609,70 @@ playbook.yml
 
     - name: changing ownership of wordpress root folder
       file: dest={{ wordpress_default_root }} state=directory owner=www-data group=www-data recurse=yes
+
+    - name: creating ansible playbook
+      template: src=templates/sync_wordpress.yml.j2 dest=/vagrant/sync_wordpress.yml owner=vagrant group=vagrant
+      tags:
+        - cron
+
+    - name: creating cron job
+      cron: name="ansible sync wordpress" minute=*/1 user=vagrant job="cd /vagrant && /usr/bin/ansible-playbook -i /vagrant/hosts /vagrant/sync_wordpress.yml" cron_file=ansible_sync_wordpress state=present
+      tags:
+        - cron
+````
+group_vars/all/keepalived.yml
+````
+---
+config_keepalived: true
+keepalived_vip: 192.168.250.100
+keepalived_vip_int: eth1
+````
+group_vars/all/mysql.yml
+````
+---
+mysql_accounts:
+  - name: "{{ mysql_replication_user }}"
+    pass: "{{ mysql_replication_pass }}"
+  - name: "{{ mysql_test_user }}"
+    pass: "{{ mysql_test_pass }}"
+  - name: "{{ wordpress_db_user }}"
+    pass: "{{ wordpress_db_user_pass }}"
+mysql_master: mysql-1
+mysql_replication_dbs:
+  - test
+  - test1
+  - test2
+  - "{{ wordpress_db }}"
+mysql_replication_user: replicator
+mysql_replication_pass: replication
+mysql_server_replication: true
+mysql_slave: mysql-2
+mysql_test_user: lbtest
+mysql_test_pass: lbtest
+````
+group_vars/all/wordpress.yml
+````
+---
+wordpress_admin_password: 91e71c4092c656317cdf2063fa7e1143  #default is VagrantAdmin1; generate new password here http://www.miraclesalad.com/webtools/md5.php
+wordpress_admin_user: admin
+# Disable All Updates
+  # By default automatic updates are enabled, set this value to true to disable all automatic updates
+wordpress_auto_up_disable: false
+#Define Core Update Level
+  #true  = Development, minor, and major updates are all enabled
+  #false = Development, minor, and major updates are all disabled
+  #minor = Minor updates are enabled, development, and major updates are disabled
+wordpress_core_update_level: true
+wordpress_db: wordpress
+wordpress_db_server: "{{ keepalived_vip }}"
+wordpress_db_user: wordpress
+wordpress_db_user_pass: wordpress
+wordpress_default_root: "{{ nginx_default_root }}/wordpress"
+wordpress_dst_sync_dir: /usr/share/nginx/html
+wordpress_package: http://wordpress.org/latest.tar.gz
+wordpress_preload_db: true
+wordpress_src_sync_dir: /usr/share/nginx/html/wordpress
+wordpress_update_db_site_file: /tmp/update_db_site.sql
 ````
 
 Usage
@@ -559,7 +705,7 @@ ansible-galaxy install mrlesmithjr.bootstrap
 ansible-galaxy install mrlesmithjr.base
 ````
 
-Now you should be able to open your browser and head over to http://192.168.250.100
+Now you should be able to open your browser and head over to http://192.168.250.100 and login with (admin/VagrantAdmin1)
 If for some reason your site is redirecting to http://nginx you can run the following playbook to update the DB..(Temporary fix for now)
 ````
 vagrant ssh lb-1 #lb-1, lb-2, mysql-1, mysql-2, web-1 or web-2; all work
