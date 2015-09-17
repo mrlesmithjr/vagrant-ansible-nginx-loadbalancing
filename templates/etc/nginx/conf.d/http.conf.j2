@@ -14,9 +14,39 @@ server {
 {% if item.location is defined %}
       location {{ item.location }} {
           proxy_pass http://{{ item.name }};
+{%   if item.proxy_headers is defined %}
+{%     for header in item.proxy_headers %}
+          proxy_set_header {{ header }};
+{%     endfor %}
+{%   endif %}
+{%   if item.health_checks is defined %}
+{%     for check in item.health_checks %}
+{%       if check is == "default" %}
+          health_check;
+{%       endif %}
+{%       if check is != "default" %}
+          health_check {{ check }};
+{%       endif %}
+{%     endfor %}
+{%   endif %}
       }
 {% endif %}
 {% if item.location is not defined %}
       proxy_pass http://{{ item.name }};
+{%   if item.proxy_headers is defined %}
+{%     for header in item.proxy_headers %}
+      proxy_set_header {{ header }};
+{%     endfor %}
+{%   endif %}
+{%   if item.health_checks is defined %}
+{%     for check in item.health_checks %}
+{%       if check is == "default" %}
+      health_check;
+{%       endif %}
+{%       if check is != "default" %}
+      health_check {{ check }};
+{%       endif %}
+{%     endfor %}
+{%   endif %}
 {% endif %}
 }
