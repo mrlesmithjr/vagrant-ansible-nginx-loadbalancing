@@ -39,42 +39,57 @@
 #      when: inventory_hostname !="{{ item }}"
       tags:
         - ssh_keys
+
     - name: identifying hosts
       local_action: ping
       register: id_hosts
+      tags:
+        - ssh_keys
 
     - name: cleaning up
       file: path=/tmp/hosts state=absent
+      tags:
+        - ssh_keys
 
     - name: cleaning up
       file: path=/tmp/hosts state=absent
       delegate_to: localhost
       run_once: true
     #  sudo: false
+      tags:
+        - ssh_keys
 
     - name: creating temporary hosts file
       file: path=/tmp/hosts state=touch mode=0777
       delegate_to: localhost
       run_once: true
     #  sudo: false
+      tags:
+        - ssh_keys
 
     - name: adding hosts to temporary hosts file
       lineinfile: dest=/tmp/hosts regexp="^{{ ansible_hostname }}" line="{{ ansible_hostname }}" state=present
       delegate_to: localhost
     #  sudo: false  # running as false for jenkins
       with_items: id_hosts.results
+      tags:
+        - ssh_keys
 
     - name: adding hosts to temporary hosts file
       lineinfile: dest=/tmp/hosts regexp="^{{ ansible_hostname }}.{{ pri_domain_name }}" line="{{ ansible_hostname }}.{{ pri_domain_name }}" state=present
       delegate_to: localhost
     #  sudo: false  # running as false for jenkins
       with_items: id_hosts.results
+      tags:
+        - ssh_keys
 
     - name: adding hosts to temporary hosts file
       lineinfile: dest=/tmp/hosts regexp="^{{ ansible_default_ipv4.address }}" line="{{ ansible_default_ipv4.address }}" state=present
       delegate_to: localhost
     #  sudo: false  # running as false for jenkins
       with_items: id_hosts.results
+      tags:
+        - ssh_keys
 
     #- name: copying hosts file
     #  copy: src=/tmp/hosts dest=/tmp/hosts
@@ -88,19 +103,27 @@
       shell: "ssh-keyscan -H -f /tmp/hosts >> /tmp/hosts.ready"
       delegate_to: localhost
       run_once: true
+      tags:
+        - ssh_keys
 
     - name: sort
       shell: "sort -u /tmp/hosts.ready > /tmp/hosts.sorted"
       delegate_to: localhost
       run_once: true
+      tags:
+        - ssh_keys
 
     - name: copying new ssh_known_hosts
       copy: src=/tmp/hosts.sorted dest=/etc/ssh/ssh_known_hosts
+      tags:
+        - ssh_keys
 
     - name: cleaning up
       file: path=/tmp/hosts state=absent
       delegate_to: localhost
       run_once: true
+      tags:
+        - ssh_keys
 
 - hosts: load-balancers
   remote_user: vagrant
