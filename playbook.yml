@@ -126,7 +126,7 @@
     - disable_default_nginx_site: true
     - load_balancer_configs:
         - name: mysql
-          load_balancing_method: least_conn ##least_conn, least_time or ip_hash
+          load_balancing_method: least_conn ##round_robin, least_conn, least_time, hash or ip_hash
           protocol: tcp
           backend_port: 3306
           frontend_port: 3306
@@ -134,7 +134,7 @@
            - mysql-1
            - mysql-2
         - name: nginx
-          load_balancing_method: ip_hash
+          load_balancing_method: ip_hash  ##round_robin, least_conn, least_time, hash or ip_hash
           protocol: http
           backend_port: 80
           frontend_port: 80
@@ -145,10 +145,11 @@
           location: /
           proxy_headers:
             - "Host $host"
+            - "X-Forwarded-Proto $scheme"
             - "X-Real-IP $remote_addr"
             - "X-Forwarded-For $proxy_add_x_forwarded_for"
 #        - name: elasticsearch
-#          load_balancing_method: least_conn ##least_conn, least_time or hash
+#          load_balancing_method: least_conn ##round_robin, least_conn, least_time, hash or ip_hash
 #          protocol: tcp
 #          backend_port: 9200
 #          frontend_port: 9200
