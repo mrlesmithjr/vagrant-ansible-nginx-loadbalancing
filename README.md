@@ -231,6 +231,7 @@ Bootstrap Playbook
       - mrlesmithjr.mysql
       - mrlesmithjr.nginx
       - mrlesmithjr.postfix
+      - mrlesmithjr.suricata
     - install_galaxy_roles: true
     - ssh_key_path: '.vagrant/machines/{{ inventory_hostname }}/virtualbox/private_key'
     - update_host_vars: true
@@ -265,6 +266,8 @@ Bootstrap Playbook
       shell: ansible-galaxy install {{ item }} --force
       with_items: galaxy_roles
       when: install_galaxy_roles is defined and install_galaxy_roles
+      tags:
+        - galaxy_roles
 
     - name: ensuring host file exists in host_vars
       stat: path=./host_vars/{{ inventory_hostname }}
@@ -315,11 +318,14 @@ playbook.yml
     - config_hosts: true
   roles:
     - mrlesmithjr.postfix
+    - { role: mrlesmithjr.suricata, tags: suricata }
   tasks:
     - name: updating /etc/hosts in case of dns lookup issues
       lineinfile: dest=/etc/hosts regexp='.*{{ item }}$' line="{{ hostvars[item].ansible_eth1.ipv4.address }} {{ item }}" state=present
       with_items: groups['all']
       when: config_hosts is defined and config_hosts
+      tags:
+        - update_etc_hosts
 
     - name: installing common packages
       apt: name={{ item }} state=present
@@ -459,38 +465,52 @@ playbook.yml
 #            - es-2
     - nginx_branch: development
   roles:
-    - mrlesmithjr.keepalived
+    - { role: mrlesmithjr.keepalived, tags: config_vip }
     - mrlesmithjr.nginx
   tasks:
     - name: adding nginx repo
       apt_repository: repo='ppa:nginx/{{ nginx_branch }}' state=present
+      tags:
+        - config_load_balancers
 
     - name: upgrading nginx
       apt: name=nginx state=latest
+      tags:
+        - config_load_balancers
 
     - name: configuring nginx for tcp load balancing
       template: src=templates/etc/nginx/nginx.conf.j2 dest=/etc/nginx/nginx.conf
       notify: restart nginx
+      tags:
+        - config_load_balancers
 
     - name: ensuring nginx stream.d folder exists
       file: path=/etc/nginx/stream.d state=directory
+      tags:
+        - config_load_balancers
 
     - name: configuring nginx load balancer (TCP) configs
       template: src=templates/etc/nginx/stream.d/streams.conf.j2 dest=/etc/nginx/stream.d/{{ item.name }}.conf
       notify: restart nginx
       with_items: load_balancer_configs
       when: load_balancer_configs is defined and item.protocol == "tcp"
+      tags:
+        - config_load_balancers
 
     - name: configuring nginx load balancer (HTTP) configs
       template: src=templates/etc/nginx/conf.d/http.conf.j2 dest=/etc/nginx/conf.d/{{ item.name }}.conf
       notify: restart nginx
       with_items: load_balancer_configs
       when: load_balancer_configs is defined and item.protocol == "http"
+      tags:
+        - config_load_balancers
 
     - name: disabling NGINX default web site
       file: dest=/etc/nginx/sites-enabled/default state=absent
       notify: restart nginx
       when: disable_default_nginx_site is defined and disable_default_nginx_site
+      tags:
+        - config_load_balancers
 
 - hosts: mysql-nodes
   remote_user: vagrant
