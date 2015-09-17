@@ -21,10 +21,10 @@ server {
 {%   endif %}
 {%   if item.health_checks is defined %}
 {%     for check in item.health_checks %}
-{%       if check is == "default" %}
+{%       if check == "default" %}
           health_check;
 {%       endif %}
-{%       if check is != "default" %}
+{%       if check != "default" %}
           health_check {{ check }};
 {%       endif %}
 {%     endfor %}
@@ -40,10 +40,10 @@ server {
 {%   endif %}
 {%   if item.health_checks is defined %}
 {%     for check in item.health_checks %}
-{%       if check is == "default" %}
+{%       if check == "default" %}
       health_check;
 {%       endif %}
-{%       if check is != "default" %}
+{%       if check != "default" %}
       health_check {{ check }};
 {%       endif %}
 {%     endfor %}
