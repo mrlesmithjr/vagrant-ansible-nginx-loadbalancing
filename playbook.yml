@@ -39,6 +39,68 @@
 #      when: inventory_hostname !="{{ item }}"
       tags:
         - ssh_keys
+    - name: identifying hosts
+      local_action: ping
+      register: id_hosts
+
+    - name: cleaning up
+      file: path=/tmp/hosts state=absent
+
+    - name: cleaning up
+      file: path=/tmp/hosts state=absent
+      delegate_to: localhost
+      run_once: true
+    #  sudo: false
+
+    - name: creating temporary hosts file
+      file: path=/tmp/hosts state=touch mode=0777
+      delegate_to: localhost
+      run_once: true
+    #  sudo: false
+
+    - name: adding hosts to temporary hosts file
+      lineinfile: dest=/tmp/hosts regexp="^{{ ansible_hostname }}" line="{{ ansible_hostname }}" state=present
+      delegate_to: localhost
+    #  sudo: false  # running as false for jenkins
+      with_items: id_hosts.results
+
+    - name: adding hosts to temporary hosts file
+      lineinfile: dest=/tmp/hosts regexp="^{{ ansible_hostname }}.{{ pri_domain_name }}" line="{{ ansible_hostname }}.{{ pri_domain_name }}" state=present
+      delegate_to: localhost
+    #  sudo: false  # running as false for jenkins
+      with_items: id_hosts.results
+
+    - name: adding hosts to temporary hosts file
+      lineinfile: dest=/tmp/hosts regexp="^{{ ansible_default_ipv4.address }}" line="{{ ansible_default_ipv4.address }}" state=present
+      delegate_to: localhost
+    #  sudo: false  # running as false for jenkins
+      with_items: id_hosts.results
+
+    #- name: copying hosts file
+    #  copy: src=/tmp/hosts dest=/tmp/hosts
+
+    #- name: creating script to process and clean up known_hosts
+    #  template: src=ssh_keyscan.sh.j2 dest=/tmp/ssh_keyscan.sh mode=0775
+
+    #- name: running script to process and clean up known_hosts
+    #  shell: "/tmp/ssh_keyscan.sh"
+    - name: keyscan
+      shell: "ssh-keyscan -H -f /tmp/hosts >> /tmp/hosts.ready"
+      delegate_to: localhost
+      run_once: true
+
+    - name: sort
+      shell: "sort -u /tmp/hosts.ready > /tmp/hosts.sorted"
+      delegate_to: localhost
+      run_once: true
+
+    - name: copying new ssh_known_hosts
+      copy: src=/tmp/hosts.sorted dest=/etc/ssh/ssh_known_hosts
+
+    - name: cleaning up
+      file: path=/tmp/hosts state=absent
+      delegate_to: localhost
+      run_once: true
 
 - hosts: load-balancers
   remote_user: vagrant
