@@ -173,7 +173,7 @@
       get_url: url={{ wordpress_package }} dest="{{ nginx_default_root }}/wordpress.tar.gz"
 
     - name: extracting wordpress package
-      unarchive: src="{{ nginx_default_root }}/wordpress.tar.gz" dest="{{ nginx_default_root }}/" creates="{{ wordpress_default_root }}/index.php"
+      unarchive: src="{{ nginx_default_root }}/wordpress.tar.gz" dest="{{ nginx_default_root }}/" creates="{{ wordpress_default_root }}/index.php" copy=no
 
     - name: disabling NGINX default web site
       file: dest=/etc/nginx/sites-enabled/default state=absent
