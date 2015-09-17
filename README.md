@@ -1,7 +1,7 @@
 Purpose
 =======
 
-Spins up Vagrant nodes (load balancers (including VIP provided by KeepAliveD), db nodes and web nodes) for testing with NGINX TCP Load-Balancing...Creates MySQL active-active Replication to keep DB's in sync and installs a pre-configured Wordpress install.
+Spins up Vagrant nodes (load balancers (including VIP provided by KeepAliveD), db nodes and web nodes) for testing with NGINX TCP and HTTP Load-Balancing...Creates MySQL active-active Replication to keep DB's in sync and installs a pre-configured Wordpress install (also synced via a cron job which runs an ansible playbook (sync_wordpress.yml) ).
 
 ###### To connect to the pre-configured wordpress site simply open your browser of choice and point to http://192.168.250.100
 
