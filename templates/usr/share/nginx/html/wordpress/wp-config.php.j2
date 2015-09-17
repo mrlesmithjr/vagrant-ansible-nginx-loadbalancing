@@ -26,8 +26,8 @@ define('DB_PASSWORD', '{{ wordpress_db_user_pass }}');
 
 
 /** Defines site_url and home_url to solve injecting the incorrect URL from configuring from VIP...Temporary fix
-define('WP_HOME','http://{{ keepalived_vip }}');
-define('WP_SITEURL','http://{{ keepalived_vip }}');
+define('WP_HOME', 'http://{{ keepalived_vip }}');
+define('WP_SITEURL', 'http://{{ keepalived_vip }}');
 
 /** MySQL hostname */
 define('DB_HOST', '{{ wordpress_db_server }}');
