@@ -16,6 +16,30 @@
         - git
         - mysql-client
 
+    - name: ensuring ssh_pub_keys folder exists
+      file: path=ssh_pub_keys state=directory
+      delegate_to: localhost
+      sudo: false
+      tags:
+        - ssh_keys
+
+    - name: generating ssh keys
+      user: name=vagrant generate_ssh_key=yes
+      tags:
+        - ssh_keys
+
+    - name: downloading ssh keys
+      fetch: src=/home/vagrant/.ssh/id_rsa.pub dest=./ssh_pub_keys/vagrant@{{ ansible_hostname }}.pub flat=yes
+      tags:
+        - ssh_keys
+
+    - name: adding ssh authorized_keys
+      authorized_key: user=vagrant key="{{ lookup('file', 'ssh_pub_keys/vagrant' + '@' + item + '.pub') }}" state=present
+      with_items: groups['all']
+#      when: inventory_hostname !="{{ item }}"
+      tags:
+        - ssh_keys
+
 - hosts: load-balancers
   remote_user: vagrant
   sudo: true
