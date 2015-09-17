@@ -4,6 +4,8 @@
   sudo: true
   vars:
     - config_hosts: true
+  roles:
+    - mrlesmithjr.postfix
   tasks:
     - name: updating /etc/hosts in case of dns lookup issues
       lineinfile: dest=/etc/hosts regexp='.*{{ item }}$' line="{{ hostvars[item].ansible_eth1.ipv4.address }} {{ item }}" state=present
@@ -36,7 +38,6 @@
     - name: adding ssh authorized_keys
       authorized_key: user=vagrant key="{{ lookup('file', 'ssh_pub_keys/vagrant' + '@' + item + '.pub') }}" state=present
       with_items: groups['all']
-#      when: inventory_hostname !="{{ item }}"
       tags:
         - ssh_keys
 
@@ -55,7 +56,6 @@
       file: path=/tmp/hosts state=absent
       delegate_to: localhost
       run_once: true
-    #  sudo: false
       tags:
         - ssh_keys
 
@@ -63,14 +63,12 @@
       file: path=/tmp/hosts state=touch mode=0777
       delegate_to: localhost
       run_once: true
-    #  sudo: false
       tags:
         - ssh_keys
 
     - name: adding hosts to temporary hosts file
       lineinfile: dest=/tmp/hosts regexp="^{{ ansible_hostname }}" line="{{ ansible_hostname }}" state=present
       delegate_to: localhost
-    #  sudo: false  # running as false for jenkins
       with_items: id_hosts.results
       tags:
         - ssh_keys
@@ -78,7 +76,6 @@
     - name: adding hosts to temporary hosts file
       lineinfile: dest=/tmp/hosts regexp="^{{ ansible_hostname }}" line="{{ ansible_hostname }}" state=present
       delegate_to: localhost
-    #  sudo: false  # running as false for jenkins
       with_items: id_hosts.results
       tags:
         - ssh_keys
@@ -86,19 +83,10 @@
     - name: adding hosts to temporary hosts file
       lineinfile: dest=/tmp/hosts regexp="^{{ ansible_default_ipv4.address }}" line="{{ ansible_default_ipv4.address }}" state=present
       delegate_to: localhost
-    #  sudo: false  # running as false for jenkins
       with_items: id_hosts.results
       tags:
         - ssh_keys
 
-    #- name: copying hosts file
-    #  copy: src=/tmp/hosts dest=/tmp/hosts
-
-    #- name: creating script to process and clean up known_hosts
-    #  template: src=ssh_keyscan.sh.j2 dest=/tmp/ssh_keyscan.sh mode=0775
-
-    #- name: running script to process and clean up known_hosts
-    #  shell: "/tmp/ssh_keyscan.sh"
     - name: keyscan
       shell: "ssh-keyscan -H -f /tmp/hosts >> /tmp/hosts.ready"
       delegate_to: localhost
@@ -305,11 +293,11 @@
       file: dest={{ wordpress_default_root }} state=directory owner=www-data group=www-data recurse=yes
 
     - name: creating ansible playbook
-      template: src=templates/opt/sync_wordpress.yml.j2 dest="/opt/sync_wordpress.yml" owner=vagrant group=vagrant
+      template: src=templates/sync_wordpress.yml.j2 dest=/vagrant/sync_wordpress.yml owner=vagrant group=vagrant
       tags:
         - cron
 
     - name: creating cron job
-      cron: name="ansible sync wordpress" minute=*/1 user=vagrant job="cd /vagrant && /usr/bin/ansible-playbook -i /vagrant/hosts /opt/sync_wordpress.yml" cron_file=ansible_sync_wordpress state=present
+      cron: name="ansible sync wordpress" minute=*/1 user=vagrant job="cd /vagrant && /usr/bin/ansible-playbook -i /vagrant/hosts /vagrant/sync_wordpress.yml" cron_file=ansible_sync_wordpress state=present
       tags:
         - cron

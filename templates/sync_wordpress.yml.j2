@@ -7,4 +7,5 @@
   tasks:
     - name: sync wordpress sites
       synchronize: src={{ wordpress_src_sync_dir }} dest={{ wordpress_dst_sync_dir }}
-      when: inventory_hostname != "{{ ansible_hostname }}"
+      with_items: groups['web-servers']
+      when: inventory_hostname != "{{ item }}"
