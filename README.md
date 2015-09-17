@@ -684,8 +684,6 @@ http://everythingshouldbevirtual.com/learning-vagrant-and-ansible-provisioning
 git clone https://github.com/mrlesmithjr/vagrant-ansible-nginx-loadbalancing.git
 cd vagrant-ansible-nginx-loadbalancing
 ````
-Update nodes.yml to reflect your desired nodes to spin up.
-
 Spin up your environment
 ````
 vagrant up
@@ -699,14 +697,8 @@ cd /vagrant
 ansible-playbook -i hosts playbook.yml
 ````
 
-To install ansible-galaxy roles within your HostOS
-````
-ansible-galaxy install mrlesmithjr.bootstrap
-ansible-galaxy install mrlesmithjr.base
-````
-
 Now you should be able to open your browser and head over to http://192.168.250.100 and login with (admin/VagrantAdmin1)
-If for some reason your site is redirecting to http://nginx you can run the following playbook to update the DB..(Temporary fix for now)
+If for some reason your site is redirecting to http://nginx you can run the following playbook to update the DB..(Should be fixed now but in case there is a need)
 ````
 vagrant ssh lb-1 #lb-1, lb-2, mysql-1, mysql-2, web-1 or web-2; all work
 cd /vagrant
