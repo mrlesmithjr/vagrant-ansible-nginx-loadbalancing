@@ -4,9 +4,7 @@
   remote_user: vagrant
   sudo: true
   vars:
-    - src_sync_dir: /usr/share/nginx/html/wordpress
-    - dst_sync_dir: /usr/share/nginx/html
   tasks:
     - name: sync wordpress sites
-      synchronize: src={{ src_sync_dir }} dest={{ dst_sync_dir }}
+      synchronize: src={{ wordpress_src_sync_dir }} dest={{ wordpress_dst_sync_dir }}
       when: inventory_hostname != "{{ ansible_hostname }}"

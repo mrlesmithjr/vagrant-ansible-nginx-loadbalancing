@@ -306,6 +306,10 @@
 
     - name: creating ansible playbook
       template: src=templates/opt/sync_wordpress.yml.j2 dest="/opt/sync_wordpress.yml" owner=vagrant group=vagrant
+      tags:
+        - cron
 
     - name: creating cron job
       cron: name="ansible sync wordpress" minute=*/1 user=vagrant job="cd /vagrant && /usr/bin/ansible-playbook -i /vagrant/hosts /opt/sync_wordpress.yml" cron_file=ansible_sync_wordpress state=present
+      tags:
+        - cron
