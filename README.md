@@ -23,8 +23,10 @@ wordpress_preload_db: false
 Requirements
 ============
 
-The following packages must be installed on your Host you intend on running all of this from. If Ansible is not available for your OS (Windows) You can modify the following lines in the Vagrantfile.
+The following packages must be installed on your Host you intend on running all of this from. If Ansible is not available for your OS (Windows) You can modify the following lines in the Vagrantfile. If you are using Windows and wish to run Ansible Client from Windows check out the link below.
+http://everythingshouldbevirtual.com/ansible-using-ansible-on-windows-via-cygwin
 
+Changing the Vagrantfile below is not neccessary per say!
 From:
 ````
 #  config.vm.provision :shell, path: "bootstrap.sh"
