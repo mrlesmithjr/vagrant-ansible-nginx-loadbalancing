@@ -76,7 +76,7 @@
         - ssh_keys
 
     - name: adding hosts to temporary hosts file
-      lineinfile: dest=/tmp/hosts regexp="^{{ ansible_hostname }}.{{ pri_domain_name }}" line="{{ ansible_hostname }}.{{ pri_domain_name }}" state=present
+      lineinfile: dest=/tmp/hosts regexp="^{{ ansible_hostname }}" line="{{ ansible_hostname }}" state=present
       delegate_to: localhost
     #  sudo: false  # running as false for jenkins
       with_items: id_hosts.results
