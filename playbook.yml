@@ -120,6 +120,8 @@
   remote_user: vagrant
   sudo: true
   handlers:
+    - name: restart keepalived
+      service: name=keepalived state=restarted
     - name: restart nginx
       service: name=nginx state=restarted
   vars:
@@ -204,6 +206,13 @@
       when: disable_default_nginx_site is defined and disable_default_nginx_site
       tags:
         - config_load_balancers
+
+    - name: configuring keepalived vip
+      template: src=templates/etc/keepalived/keepalived.conf.j2 dest=/etc/keepalived/keepalived.conf
+      notify: restart keepalived
+      tags:
+        - config_load_balancers
+        - config_vip
 
 - hosts: mysql-nodes
   remote_user: vagrant
