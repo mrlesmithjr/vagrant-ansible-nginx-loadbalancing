@@ -3,17 +3,11 @@
   remote_user: vagrant
   sudo: yes
   vars:
-    - galaxy_roles:
-      - mrlesmithjr.bootstrap
-      - mrlesmithjr.base
-      - mrlesmithjr.keepalived
-      - mrlesmithjr.mysql
-      - mrlesmithjr.nginx
-      - mrlesmithjr.postfix
-      - mrlesmithjr.suricata
     - install_galaxy_roles: true
     - ssh_key_path: '.vagrant/machines/{{ inventory_hostname }}/virtualbox/private_key'
     - update_host_vars: true
+  vars_files:
+    - /vars/galaxy_roles.yml
   roles:
   tasks:
     - name: updating apt cache
@@ -43,6 +37,14 @@
 
     - name: installing ansible-galaxy roles
       shell: ansible-galaxy install {{ item }} --force
+      with_items: galaxy_roles
+      when: install_galaxy_roles is defined and install_galaxy_roles
+      tags:
+        - galaxy_roles
+
+    - name: installing ansible-galaxy roles
+      shell: ansible-galaxy install {{ item }} --force
+      delegate_to: localhost
       with_items: galaxy_roles
       when: install_galaxy_roles is defined and install_galaxy_roles
       tags:
