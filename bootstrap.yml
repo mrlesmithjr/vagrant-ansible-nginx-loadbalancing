@@ -46,7 +46,7 @@
     - name: installing ansible-galaxy roles
       shell: ansible-galaxy install {{ item }}
       with_items: galaxy_roles
-      when: install_galaxy_roles is defined and install_galaxy_roles
+      when: (install_galaxy_roles is defined and install_galaxy_roles) and (force_galaxy_roles_install is defined and not force_galaxy_roles_install)
       tags:
         - galaxy_roles
 
