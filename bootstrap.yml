@@ -3,7 +3,7 @@
   remote_user: vagrant
   sudo: yes
   vars:
-    - force_galaxy_roles_install: false
+    - force_galaxy_roles_install: true
     - install_galaxy_roles: true
     - ssh_key_path: '.vagrant/machines/{{ inventory_hostname }}/virtualbox/private_key'
     - update_host_vars: true
