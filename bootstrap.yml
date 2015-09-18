@@ -7,7 +7,7 @@
     - ssh_key_path: '.vagrant/machines/{{ inventory_hostname }}/virtualbox/private_key'
     - update_host_vars: true
   vars_files:
-    - /vars/galaxy_roles.yml
+    - vars/galaxy_roles.yml
   roles:
   tasks:
     - name: updating apt cache
