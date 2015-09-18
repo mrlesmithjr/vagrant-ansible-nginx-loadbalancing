@@ -53,7 +53,35 @@ VirtualBox (https://www.virtualbox.org/)
 
 Vagrant (https://www.vagrantup.com/)
 
+Usage
+=====
 
+http://everythingshouldbevirtual.com/learning-vagrant-and-ansible-provisioning
+
+````
+git clone https://github.com/mrlesmithjr/vagrant-ansible-nginx-loadbalancing.git
+cd vagrant-ansible-nginx-loadbalancing
+````
+Spin up your environment
+````
+vagrant up
+````
+
+To run ansible from within Vagrant nodes (Ex. site.yml) ---- Recommended
+````
+vagrant ssh lb-1 # or lb-2, mysql-1, mysql-2, web-1 or web-2; any will work
+cd /vagrant
+./update_hosts.sh
+ansible-playbook -i hosts playbook.yml
+````
+
+Now you should be able to open your browser and head over to http://192.168.250.100 and login with (admin/VagrantAdmin1)
+If for some reason your site is redirecting to http://nginx you can run the following playbook to update the DB..(Should be fixed now but in case there is a need)
+````
+vagrant ssh lb-1 #lb-1, lb-2, mysql-1, mysql-2, web-1 or web-2; all work
+cd /vagrant
+ansible-playbook -i hosts fix_db_wordpress_site_url.yml
+````
 
 Variable Definitions
 ====================
@@ -696,36 +724,6 @@ wordpress_package: http://wordpress.org/latest.tar.gz
 wordpress_preload_db: true
 wordpress_src_sync_dir: /usr/share/nginx/html/wordpress
 wordpress_update_db_site_file: /tmp/update_db_site.sql
-````
-
-Usage
-=====
-
-http://everythingshouldbevirtual.com/learning-vagrant-and-ansible-provisioning
-
-````
-git clone https://github.com/mrlesmithjr/vagrant-ansible-nginx-loadbalancing.git
-cd vagrant-ansible-nginx-loadbalancing
-````
-Spin up your environment
-````
-vagrant up
-````
-
-To run ansible from within Vagrant nodes (Ex. site.yml)
-````
-vagrant ssh lb-1 # or lb-2, mysql-1, mysql-2, web-1 or web-2; any will work
-cd /vagrant
-./update_hosts.sh
-ansible-playbook -i hosts playbook.yml
-````
-
-Now you should be able to open your browser and head over to http://192.168.250.100 and login with (admin/VagrantAdmin1)
-If for some reason your site is redirecting to http://nginx you can run the following playbook to update the DB..(Should be fixed now but in case there is a need)
-````
-vagrant ssh lb-1 #lb-1, lb-2, mysql-1, mysql-2, web-1 or web-2; all work
-cd /vagrant
-ansible-playbook -i hosts fix_db_wordpress_site_url.yml
 ````
 
 License
